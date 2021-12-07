@@ -476,6 +476,10 @@ Libraries for networking
 
   * Updated to v0.21.0. See the :ref:`liblwm2m_carrier_changelog` for detailed information.
 
+* :ref:`lib_fota_download` library:
+
+  * Fixed an issue where the application would not be notified of errors originating from inside :c:func:`download_with_offset`. In the http_upgrade samples, this would result in the dfu start button interrupt being disabled after a connect error in :c:func:`download_with_offset` after a disconnect during firmware download.
+
 Libraries for NFC
 -----------------
 
