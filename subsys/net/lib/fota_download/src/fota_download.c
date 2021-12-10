@@ -27,7 +27,7 @@
 #define FILE_BUF_LEN (CONFIG_DOWNLOAD_CLIENT_MAX_FILENAME_SIZE)
 #endif
 
-LOG_MODULE_REGISTER(fota_download, CONFIG_FOTA_DOWNLOAD_LOG_LEVEL);
+LOG_MODULE_REGISTER(fota_download, 4);
 
 static fota_download_callback_t callback;
 static struct download_client   dlc;
@@ -35,6 +35,7 @@ static struct k_work_delayable  dlc_with_offset_work;
 static int socket_retries_left;
 #ifdef CONFIG_DFU_TARGET_MCUBOOT
 static uint8_t mcuboot_buf[CONFIG_FOTA_DOWNLOAD_MCUBOOT_FLASH_BUF_SZ] __aligned(4);
+static size_t sf_buf_bytes;
 #endif
 static enum dfu_target_image_type img_type;
 static enum dfu_target_image_type img_type_expected = DFU_TARGET_IMAGE_TYPE_ANY;
@@ -160,6 +161,12 @@ static int download_client_callback(const struct download_client_evt *event)
 			}
 		}
 
+#ifdef CONFIG_DFU_TARGET_MCUBOOT
+		if (img_type == DFU_TARGET_IMAGE_TYPE_MCUBOOT) {
+			sf_buf_bytes = (sf_buf_bytes + event->fragment.len)
+				     % CONFIG_FOTA_DOWNLOAD_MCUBOOT_FLASH_BUF_SZ;
+		}
+#endif
 		err = dfu_target_write(event->fragment.buf,
 				       event->fragment.len);
 		if (err != 0) {
@@ -184,6 +191,11 @@ static int download_client_callback(const struct download_client_evt *event)
 				send_error_evt(FOTA_DOWNLOAD_ERROR_CAUSE_DOWNLOAD_FAILED);
 				return err;
 			}
+#ifdef CONFIG_DFU_TARGET_MCUBOOT
+			if (img_type == DFU_TARGET_IMAGE_TYPE_MCUBOOT) {
+				offset += sf_buf_bytes;
+			}
+#endif
 
 			if (file_size == 0) {
 				LOG_DBG("invalid file size: %d", file_size);
@@ -204,6 +216,11 @@ static int download_client_callback(const struct download_client_evt *event)
 			send_error_evt(FOTA_DOWNLOAD_ERROR_CAUSE_DOWNLOAD_FAILED);
 			return err;
 		}
+#ifdef CONFIG_DFU_TARGET_MCUBOOT
+		if (img_type == DFU_TARGET_IMAGE_TYPE_MCUBOOT) {
+			sf_buf_bytes = 0;
+		}
+#endif
 
 		err = download_client_disconnect(&dlc);
 		if (err != 0) {
@@ -252,13 +269,18 @@ static int download_client_callback(const struct download_client_evt *event)
 
 static void download_with_offset(struct k_work *unused)
 {
-	int offset;
+	size_t offset;
 	int err = dfu_target_offset_get(&offset);
 	if (err != 0) {
 		LOG_ERR("%s failed to get offset with error %d", __func__, err);
 		send_error_evt(FOTA_DOWNLOAD_ERROR_CAUSE_DOWNLOAD_FAILED);
 		return;
 	}
+#ifdef CONFIG_DFU_TARGET_MCUBOOT
+	if (img_type == DFU_TARGET_IMAGE_TYPE_MCUBOOT) {
+		offset += sf_buf_bytes;
+	}
+#endif
 
 	err = download_client_connect(&dlc, dlc.host, &dlc.config);
 	if (err != 0) {
@@ -398,6 +420,8 @@ int fota_download_init(fota_download_callback_t client_callback)
 			__func__, err);
 		return err;
 	}
+
+	sf_buf_bytes = 0;
 #endif
 
 	k_work_init_delayable(&dlc_with_offset_work, download_with_offset);
