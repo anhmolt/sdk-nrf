@@ -581,7 +581,7 @@ void nrf_modem_os_init(void)
 	read_task_create();
 
 #ifdef CONFIG_NRF_MODEM_LIB_TRACE_ENABLED
-	int err = nrf_modem_lib_trace_init();
+	int err = nrf_modem_lib_trace_init(&trace_heap);
 
 	if (err != 0) {
 		LOG_ERR("nrf_modem_lib_trace_init failed with error %d.", err);
@@ -636,10 +636,6 @@ int32_t nrf_modem_os_trace_put(const uint8_t *const data, uint32_t len)
 		LOG_ERR("nrf_modem_lib_trace_process failed, err %d", err);
 	}
 
-	err = nrf_modem_trace_processed_callback(data, len);
-	if (err) {
-		LOG_ERR("nrf_modem_trace_processed_callback failed, err %d", err);
-	}
 #endif
 	return 0;
 }

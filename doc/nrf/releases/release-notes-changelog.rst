@@ -368,7 +368,6 @@ Other libraries
       Use :c:macro:`EVENT_FLAGS_CREATE` to set multiple flags:
 
       .. code-block:: c
-
          EVENT_TYPE_DEFINE(my_event,
            log_my_event,
            &my_event_info,
