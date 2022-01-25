@@ -585,10 +585,6 @@ int32_t nrf_modem_os_trace_put(const uint8_t *const data, uint32_t len)
 		LOG_ERR("nrf_modem_lib_trace_process failed, err %d", err);
 	}
 
-	err = nrf_modem_trace_processed_callback(data, len);
-	if (err) {
-		LOG_ERR("nrf_modem_trace_processed_callback failed, err %d", err);
-	}
 #endif
 	return 0;
 }

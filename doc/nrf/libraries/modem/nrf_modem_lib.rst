@@ -75,6 +75,9 @@ The module provides the functionality for starting, stopping, and forwarding of 
 
 If the application wants the trace data, :c:func:`nrf_modem_lib_trace_init` must be called before :c:func:`nrf_modem_lib_init`.
 This is done automatically when using the OS Abstraction layer.
+
+Trace processing is done in the `trace_handler_thread`. When the modem trace module receives trace data, it places it in a FIFO. The thread reads from the FIFO and forwards the trace data to the configured trace transport medium. Since FIFOs use heap memory, the use of modem trace module will result in increased heap usage.
+
 If the application wants to stop an ongoing trace session, it can use the :c:func:`nrf_modem_lib_trace_stop` function.
 The :c:func:`nrf_modem_lib_trace_start` function supports activating a subset of traces or all traces.
 

@@ -183,6 +183,15 @@ Libraries for networking
 
     * An issue where downloads of COAP URIs would fail when they contained multiple path elements.
 
+Modem libraries
+---------------
+
+* Updated:
+
+  * :ref:`nrf_modem_lib_readme`:
+
+    * Move modem trace processing to a thread.
+
 sdk-nrfxlib
 -----------
 
