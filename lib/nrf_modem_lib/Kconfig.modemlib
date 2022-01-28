@@ -32,22 +32,31 @@ config NRF_MODEM_LIB_TRACE_ENABLED
 
 if NRF_MODEM_LIB_TRACE_ENABLED
 
-choice NRF_MODEM_LIB_TRACE_MEDIUM
-	prompt "nRF modem trace medium"
-	default NRF_MODEM_LIB_TRACE_MEDIUM_UART
-
 config NRF_MODEM_LIB_TRACE_MEDIUM_UART
 	bool "Send modem trace over UARTE1"
+	default y
 	# Modem tracing over UART use the UARTE1 as a dedicated peripheral.
 	# This enables the UARTE1 peripheral and includes nrfx UARTE driver.
 	select NRFX_UARTE1
 
+if NRF_MODEM_LIB_TRACE_MEDIUM_UART
+
+config NRF_MODEM_LIB_TRACE_MEDIUM_UART_PAUSED
+	bool "Start UART medium in paused state"
+	default n
+
+endif # NRF_MODEM_LIB_TRACE_MEDIUM_UART
+
 config NRF_MODEM_LIB_TRACE_MEDIUM_RTT
 	bool "Send modem trace over SEGGER RTT"
+	default n
 	select USE_SEGGER_RTT
 
-endchoice # NRF_MODEM_LIB_TRACE_MEDIUM
 if NRF_MODEM_LIB_TRACE_MEDIUM_RTT
+
+config NRF_MODEM_LIB_TRACE_MEDIUM_RTT_PAUSED
+	bool "Start RTT medium in paused state"
+	default n
 
 config NRF_MODEM_LIB_TRACE_MEDIUM_RTT_BUF_SIZE
 	int "Size of the buffer used by the RTT to write traces"

@@ -9,27 +9,15 @@
 #include <zephyr.h>
 #include <modem/nrf_modem_lib_trace.h>
 #include <nrf_modem_at.h>
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_UART
-#include <modem/trace_medium_uart.h>
-#endif
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_RTT
-#include <modem/trace_medium_rtt.h>
-#endif
+#include <modem/trace_medium.h>
 
 static bool is_transport_initialized;
 
 int nrf_modem_lib_trace_init(void)
 {
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_UART
-	is_transport_initialized = trace_medium_uart_init();
-#endif
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_RTT
-	is_transport_initialized = trace_medium_rtt_init();
-#endif
+	trace_medium_init();
+	is_transport_initialized = true;
 
-	if (!is_transport_initialized) {
-		return -EBUSY;
-	}
 	return 0;
 }
 
@@ -52,13 +40,7 @@ int nrf_modem_lib_trace_process(const uint8_t *data, uint32_t len)
 		return -ENXIO;
 	}
 
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_UART
-	trace_medium_uart_write(data, len);
-#endif
-
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_RTT
-	trace_medium_rtt_write(data, len);
-#endif
+	trace_medium_write(data, len);
 
 	return 0;
 }
