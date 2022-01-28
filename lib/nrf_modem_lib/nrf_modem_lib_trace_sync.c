@@ -6,33 +6,31 @@
 
 #include <stdio.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <modem/nrf_modem_lib_trace.h>
+#include <modem/trace_medium.h>
+#include <nrf_modem.h>
 #include <nrf_modem_at.h>
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_UART
-#include <modem/trace_medium_uart.h>
-#endif
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_RTT
-#include <modem/trace_medium_rtt.h>
-#endif
+
+LOG_MODULE_REGISTER(nrf_modem_lib_trace, CONFIG_NRF_MODEM_LIB_LOG_LEVEL);
 
 static bool is_transport_initialized;
 static bool is_stopped;
 
 int nrf_modem_lib_trace_init(struct k_heap *trace_heap)
 {
+	int err;
+
 	ARG_UNUSED(trace_heap);
 	is_stopped = false;
 
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_UART
-	is_transport_initialized = trace_medium_uart_init();
-#endif
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_RTT
-	is_transport_initialized = trace_medium_rtt_init();
-#endif
-
-	if (!is_transport_initialized) {
+	err = trace_medium_init();
+	if (err) {
+		is_transport_initialized = false;
 		return -EBUSY;
 	}
+
+	is_transport_initialized = true;
 	return 0;
 }
 
@@ -61,12 +59,7 @@ int nrf_modem_lib_trace_process(const uint8_t *data, uint32_t len)
 		return 0;
 	}
 
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_UART
-	trace_medium_uart_write(data, len);
-#endif
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_RTT
-	trace_medium_rtt_write(data, len);
-#endif
+	trace_medium_write(data, len);
 
 	return 0;
 }
@@ -88,11 +81,5 @@ int nrf_modem_lib_trace_stop(void)
 void nrf_modem_lib_trace_deinit(void)
 {
 	is_transport_initialized = false;
-
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_UART
-	trace_medium_uart_deinit();
-#endif
-#ifdef CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_RTT
-	trace_medium_rtt_deinit();
-#endif
+	trace_medium_deinit();
 }

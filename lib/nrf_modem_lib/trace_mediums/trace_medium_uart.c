@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <modem/trace_medium_uart.h>
+#include <modem/trace_medium.h>
 #include <nrfx_uarte.h>
 
-LOG_MODULE_REGISTER(trace_medium_uart, CONFIG_NRF_MODEM_LIB_LOG_LEVEL);
+LOG_MODULE_DECLARE(modem_trace_medium, CONFIG_MODEM_TRACE_MEDIUM_LOG_LEVEL);
 
 #define UART1_NL DT_NODELABEL(uart1)
 PINCTRL_DT_DEFINE(UART1_NL);
 static const nrfx_uarte_t uarte_inst = NRFX_UARTE_INSTANCE(1);
 
-/* Maximum time to wait for a UART transfer to complete before giving up.*/
+/* Maximum time to wait for a UART transfer to complete before giving up. */
 #define UART_TX_WAIT_TIME_MS 100
 #define UNUSED_FLAGS 0
 
@@ -51,9 +51,9 @@ static void wait_for_tx_done(void)
 	k_sem_give(&tx_sem);
 }
 
-bool trace_medium_uart_init(void)
+int trace_medium_init(void)
 {
-	int ret;
+	int err;
 	const uint8_t irq_priority = DT_IRQ(UART1_NL, priority);
 	const nrfx_uarte_config_t config = {
 		.skip_gpio_cfg = true,
@@ -67,39 +67,50 @@ bool trace_medium_uart_init(void)
 		.p_context = NULL,
 	};
 
-	ret = pinctrl_apply_state(PINCTRL_DT_DEV_CONFIG_GET(UART1_NL), PINCTRL_STATE_DEFAULT);
-	__ASSERT_NO_MSG(ret == 0);
+	err = pinctrl_apply_state(PINCTRL_DT_DEV_CONFIG_GET(UART1_NL), PINCTRL_STATE_DEFAULT);
+	__ASSERT_NO_MSG(err == 0);
 
 	IRQ_CONNECT(DT_IRQN(UART1_NL),
 		irq_priority,
 		nrfx_isr,
 		&nrfx_uarte_1_irq_handler,
 		UNUSED_FLAGS);
-	return (nrfx_uarte_init(&uarte_inst, &config, &uarte_callback) ==
-		NRFX_SUCCESS);
+	err = nrfx_uarte_init(&uarte_inst, &config, &uarte_callback);
+	if (err != NRFX_SUCCESS && err != NRFX_ERROR_INVALID_STATE) {
+		return -EBUSY;
+	}
+	return 0;
 }
 
-void trace_medium_uart_deinit(void)
+int trace_medium_deinit(void)
 {
+	int err;
+
 	nrfx_uarte_uninit(&uarte_inst);
+
+	err = pinctrl_apply_state(PINCTRL_DT_DEV_CONFIG_GET(UART1_NL), PINCTRL_STATE_SLEEP);
+	__ASSERT_NO_MSG(err == 0);
+
+	return 0;
 }
 
-int trace_medium_uart_write(const uint8_t *data, uint32_t len)
+int trace_medium_write(const void *data, size_t len)
 {
 	/* Split RAM buffer into smaller chunks to be transferred using DMA. */
-	const uint32_t MAX_BUF_LEN = (1 << UARTE1_EASYDMA_MAXCNT_SIZE) - 1;
-	uint32_t remaining_bytes = len;
+	uint8_t *buf = (uint8_t *)data;
+	const size_t MAX_BUF_LEN = (1 << UARTE1_EASYDMA_MAXCNT_SIZE) - 1;
+	size_t remaining_bytes = len;
 	nrfx_err_t err;
 
 	while (remaining_bytes) {
 		size_t transfer_len = MIN(remaining_bytes, MAX_BUF_LEN);
-		uint32_t idx = len - remaining_bytes;
+		size_t idx = len - remaining_bytes;
 
 		if (k_sem_take(&tx_sem, K_MSEC(UART_TX_WAIT_TIME_MS)) != 0) {
 			LOG_WRN("UARTE TX not available!");
 			break;
 		}
-		err = nrfx_uarte_tx(&uarte_inst, &data[idx], transfer_len);
+		err = nrfx_uarte_tx(&uarte_inst, &buf[idx], transfer_len);
 		if (err != NRFX_SUCCESS) {
 			LOG_ERR("nrfx_uarte_tx error: %d", err);
 			k_sem_give(&tx_sem);
@@ -109,5 +120,5 @@ int trace_medium_uart_write(const uint8_t *data, uint32_t len)
 	}
 	wait_for_tx_done();
 
-	return 0;
+	return len;
 }

@@ -4,21 +4,21 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <modem/trace_medium_uart.h>
+#include <modem/trace_medium.h>
 #include <nrfx_uarte.h>
 
-LOG_MODULE_REGISTER(trace_medium_uart, CONFIG_NRF_MODEM_LIB_LOG_LEVEL);
+LOG_MODULE_DECLARE(modem_trace_medium, CONFIG_MODEM_TRACE_MEDIUM_LOG_LEVEL);
 
 #define UART1_NL DT_NODELABEL(uart1)
 PINCTRL_DT_DEFINE(UART1_NL);
 static const nrfx_uarte_t uarte_inst = NRFX_UARTE_INSTANCE(1);
 
-bool trace_medium_uart_init(void)
+int trace_medium_init(void)
 {
-	int ret;
+	int err;
 	const nrfx_uarte_config_t config = {
 		.skip_gpio_cfg = true,
 		.skip_psel_cfg = true,
@@ -31,30 +31,42 @@ bool trace_medium_uart_init(void)
 		.p_context = NULL,
 	};
 
-	ret = pinctrl_apply_state(PINCTRL_DT_DEV_CONFIG_GET(UART1_NL), PINCTRL_STATE_DEFAULT);
-	__ASSERT_NO_MSG(ret == 0);
+	err = pinctrl_apply_state(PINCTRL_DT_DEV_CONFIG_GET(UART1_NL), PINCTRL_STATE_DEFAULT);
+	__ASSERT_NO_MSG(err == 0);
 
-	return (nrfx_uarte_init(&uarte_inst, &config, NULL) == NRFX_SUCCESS);
+	err = nrfx_uarte_init(&uarte_inst, &config, NULL);
+	if (err != NRFX_SUCCESS && err != NRFX_ERROR_INVALID_STATE) {
+		return -EBUSY;
+	}
+	return 0;
 }
 
-void trace_medium_uart_deinit(void)
+int trace_medium_deinit(void)
 {
+	int err;
+
 	nrfx_uarte_uninit(&uarte_inst);
+
+	err = pinctrl_apply_state(PINCTRL_DT_DEV_CONFIG_GET(UART1_NL), PINCTRL_STATE_SLEEP);
+	__ASSERT_NO_MSG(err == 0);
+
+	return 0;
 }
 
-int trace_medium_uart_write(const uint8_t *data, uint32_t len)
+int trace_medium_write(const void *data, size_t len)
 {
 	/* Split RAM buffer into smaller chunks to be transferred using DMA. */
-	uint32_t remaining_bytes = len;
-	const uint32_t MAX_BUF_LEN = (1 << UARTE1_EASYDMA_MAXCNT_SIZE) - 1;
+	uint8_t *buf = (uint8_t *)data;
+	size_t remaining_bytes = len;
+	const size_t MAX_BUF_LEN = (1 << UARTE1_EASYDMA_MAXCNT_SIZE) - 1;
 
 	while (remaining_bytes) {
 		size_t transfer_len = MIN(remaining_bytes, MAX_BUF_LEN);
-		uint32_t idx = len - remaining_bytes;
+		size_t idx = len - remaining_bytes;
 
-		nrfx_uarte_tx(&uarte_inst, &data[idx], transfer_len);
+		nrfx_uarte_tx(&uarte_inst, &buf[idx], transfer_len);
 		remaining_bytes -= transfer_len;
 	}
 
-	return 0;
+	return len;
 }
