@@ -5,12 +5,16 @@
  */
 
 #include <nrfx_uarte.h>
-#include <modem/trace_medium_uart.h>
+#include <modem/trace_medium.h>
+
+TRACE_MEDIUM_REGISTER(uart, trace_medium_uart_init, trace_medium_uart_write, 0);
 
 static const nrfx_uarte_t uarte_inst = NRFX_UARTE_INSTANCE(1);
 
-bool trace_medium_uart_init(void)
+int trace_medium_uart_init(void)
 {
+	int err;
+
 	const nrfx_uarte_config_t config = {
 		.pseltxd = DT_PROP(DT_NODELABEL(uart1), tx_pin),
 		.pselrxd = DT_PROP(DT_NODELABEL(uart1), rx_pin),
@@ -25,10 +29,15 @@ bool trace_medium_uart_init(void)
 		.p_context = NULL,
 	};
 
-	return (nrfx_uarte_init(&uarte_inst, &config, NULL) == NRFX_SUCCESS);
+	err = nrfx_uarte_init(&uarte_inst, &config, NULL);
+	if (err != NRFX_SUCCESS) {
+		return -EFAULT;
+	}
+
+	return 0;
 }
 
-int trace_medium_uart_write(const uint8_t *data, uint32_t len)
+void trace_medium_uart_write(const uint8_t *data, uint32_t len)
 {
 	/* Split RAM buffer into smaller chunks to be transferred using DMA. */
 	uint32_t remaining_bytes = len;
@@ -41,6 +50,4 @@ int trace_medium_uart_write(const uint8_t *data, uint32_t len)
 		nrfx_uarte_tx(&uarte_inst, &data[idx], transfer_len);
 		remaining_bytes -= transfer_len;
 	}
-
-	return 0;
 }
