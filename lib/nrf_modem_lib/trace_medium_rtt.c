@@ -39,4 +39,6 @@ void trace_medium_rtt_write(const uint8_t *data, uint32_t len)
 		SEGGER_RTT_WriteSkipNoLock(trace_rtt_channel, &data[idx], transfer_len);
 		remaining_bytes -= transfer_len;
 	}
+
+	trace_medium_write_done();
 }

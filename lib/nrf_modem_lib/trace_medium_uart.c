@@ -50,4 +50,6 @@ void trace_medium_uart_write(const uint8_t *data, uint32_t len)
 		nrfx_uarte_tx(&uarte_inst, &data[idx], transfer_len);
 		remaining_bytes -= transfer_len;
 	}
+
+	trace_medium_write_done();
 }

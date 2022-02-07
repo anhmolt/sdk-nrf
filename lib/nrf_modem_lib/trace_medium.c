@@ -126,6 +126,10 @@ void trace_medium_write_done(void)
 		should_deinit_mediums = false;
 		deinit_mediums();
 	}
+
+	do {
+		err = nrf_modem_trace_processed_callback(trace_data, trace_data_length);
+	} while (err == -EAGAIN);
 }
 
 int trace_medium_select(const char *name)
