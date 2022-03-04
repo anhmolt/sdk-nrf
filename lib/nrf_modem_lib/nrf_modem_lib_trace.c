@@ -47,7 +47,7 @@ struct trace_data_t {
 
 K_FIFO_DEFINE(trace_fifo);
 
-#define TRACE_THREAD_STACK_SIZE 256
+#define TRACE_THREAD_STACK_SIZE 8*256
 #define TRACE_THREAD_PRIORITY CONFIG_NRF_MODEM_LIB_TRACE_THREAD_PRIO
 
 void trace_handler_thread(void)
