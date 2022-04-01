@@ -277,16 +277,6 @@ int nrf_modem_os_sem_take(void *sem, int timeout)
 	return 0;
 }
 
-void nrf_modem_os_application_irq_set(void)
-{
-	NVIC_SetPendingIRQ(NRF_MODEM_APPLICATION_IRQ);
-}
-
-void nrf_modem_os_application_irq_clear(void)
-{
-	NVIC_ClearPendingIRQ(NRF_MODEM_APPLICATION_IRQ);
-}
-
 void nrf_modem_os_trace_irq_set(void)
 {
 	NVIC_SetPendingIRQ(TRACE_IRQ);
@@ -307,11 +297,9 @@ void nrf_modem_os_trace_irq_enable(void)
 	irq_enable(TRACE_IRQ);
 }
 
-ISR_DIRECT_DECLARE(rpc_proxy_irq_handler)
+void nrf_modem_os_event_notify(void)
 {
 	atomic_inc(&rpc_event_cnt);
-
-	nrf_modem_application_irq_handler();
 
 	struct sleeping_thread *thread;
 
@@ -319,10 +307,6 @@ ISR_DIRECT_DECLARE(rpc_proxy_irq_handler)
 	SYS_SLIST_FOR_EACH_CONTAINER(&sleeping_threads, thread, node) {
 		k_sem_give(&thread->sem);
 	}
-
-	ISR_DIRECT_PM(); /* PM done after servicing interrupt for best latency
-			  */
-	return 1; /* We should check if scheduling decision should be made */
 }
 
 #ifdef CONFIG_NRF_MODEM_LIB_TRACE_ENABLED
@@ -342,14 +326,6 @@ void trace_irq_init(void)
 	irq_enable(TRACE_IRQ);
 }
 #endif
-
-void read_task_create(void)
-{
-	IRQ_DIRECT_CONNECT(NRF_MODEM_APPLICATION_IRQ,
-			   NRF_MODEM_APPLICATION_IRQ_PRIORITY,
-			   rpc_proxy_irq_handler, UNUSED_FLAGS);
-	irq_enable(NRF_MODEM_APPLICATION_IRQ);
-}
 
 void *nrf_modem_os_alloc(size_t bytes)
 {
@@ -577,8 +553,6 @@ void nrf_modem_os_init(void)
 {
 	sys_slist_init(&sleeping_threads);
 	atomic_clear(&rpc_event_cnt);
-
-	read_task_create();
 
 #ifdef CONFIG_NRF_MODEM_LIB_TRACE_ENABLED
 	int err = nrf_modem_lib_trace_init();
