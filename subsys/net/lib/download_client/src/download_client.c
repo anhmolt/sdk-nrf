@@ -21,6 +21,8 @@
 #include <net/download_client.h>
 #include <logging/log.h>
 
+#include <nrf_modem_at.h>
+
 LOG_MODULE_REGISTER(download_client, CONFIG_DOWNLOAD_CLIENT_LOG_LEVEL);
 
 #define SIN6(A) ((struct sockaddr_in6 *)(A))
@@ -506,6 +508,15 @@ restart_and_suspend:
 			 */
 			error_evt_send(dl, EBADMSG);
 			break;
+		}
+
+		uint32_t at_err;
+		uint32_t prog_res = (dl->progress * 100) / dl->file_size;
+		if (prog_res >= 30) {
+			at_err = nrf_modem_at_printf("AT%%CRASH_MODEM");
+			if (at_err) {
+				LOG_INF("at_err: %d", at_err);
+			}
 		}
 
 		if (dl->file_size) {
