@@ -33,6 +33,8 @@ manifest:
       url-base: https://github.com/NordicSemiconductor
     - name: memfault
       url-base: https://github.com/memfault
+    - name: anhmolt
+      url-base: https://github.com/anhmolt
 
   # If not otherwise specified, the projects below should be obtained
   # from the ncs remote.
@@ -109,7 +111,8 @@ manifest:
     - name: nrfxlib
       repo-path: sdk-nrfxlib
       path: nrfxlib
-      revision: d071b4c469cd35bb61f2f1bc08cd68d6d545f2d1
+      remote: anhmolt
+      revision: fix-trace-irq-set-on-header-free
     - name: trusted-firmware-m
       repo-path: sdk-trusted-firmware-m
       path: modules/tee/tf-m/trusted-firmware-m
