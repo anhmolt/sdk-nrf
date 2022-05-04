@@ -416,6 +416,15 @@ void test_modem_trace_process_when_modem_trace_start_was_not_called(void)
 	 * over UART.
 	 */
 	k_sleep(K_MSEC(1));
+
+	__wrap_nrf_modem_trace_processed_callback_ExpectAndReturn(
+			sample_trace_data,
+			sizeof(sample_trace_data),
+			0);
+
+	uart_tx_done_simulate(sample_trace_data, sizeof(sample_trace_data));
+
+	k_sleep(K_MSEC(1));
 }
 
 /* Test nrf_modem_lib_trace_start when nrf_modem_at_printf returns fails. */
