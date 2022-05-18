@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+if NRF_MODEM_LIB_TRACE_ENABLED
+
+# Updates the trace medium choice with another medium.
+choice NRF_MODEM_LIB_TRACE_MEDIUM
+
+config NRF_MODEM_LIB_TRACE_MEDIUM_CUSTOM
+	bool "Count modem traces and print to terminal"
+	help
+	  Print modem trace data statistics
+	  and cpu utilization.
+
+endchoice # NRF_MODEM_LIB_TRACE_MEDIUM
+
+endif # NRF_MODEM_LIB_TRACE_ENABLED

@@ -20,7 +20,7 @@ if(CONFIG_NRF_MODEM_LIB_TRACE_ENABLED)
   )
 
   add_subdirectory(trace_mediums)
-
+  
 endif()
 
 zephyr_library_sources(errno_sanity.c)
