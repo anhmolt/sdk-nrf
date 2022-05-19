@@ -101,6 +101,81 @@ If the modem trace medium is unable to keep up with the modem traces, the heap s
 Increasing the heap size allows more traces in the FIFO queue, but the trace heap will still be depleted if the modem continues to send traces at a rate faster than the rate at which the medium can handle over time.
 If increasing the trace heap size does not help, either optimize the medium speed or use a faster trace transport medium.
 
+.. _adding_custom_trace_transport_mediums:
+
+Adding custom trace transport mediums
+=====================================
+
+If the existing trace transport mediums are not sufficient, custom transport mediums can be added.
+Note that only one transport medium can be compiled with the application at any point.
+Which trace medium that is compiled is controlled by the Kconfig choice :kconfig:option:`NRF_MODEM_LIB_TRACE_MEDIUM`.
+
+Adding a custom transport medium can be done by following the steps below.
+As a reference, the implementation of the UART trace medium (default medium) can be found in :file:`nrf/lib/nrf_modem_lib/trace_mediums`.
+You can place your custom trace medium(s) in this folder.
+However, you can also place it in another location of your choosing, as long as the build system can find the :file:`Kconfig` and :file:`CMakeLists.txt` files.
+
+1. Add a C file implementing the interface in :file:`nrf/include/modem/trace_medium.h`\.
+   .. code-block:: c
+   /* my_trace_medium.c */
+   #include <modem/trace_medium.h>
+
+   int trace_medium_init(void)
+   {
+           /* initialize transport medium here */
+           return 0;
+   }
+
+   int trace_medium_deinit(void)
+   {
+           /* optional deinitialization code here */
+           return 0;
+   }
+
+   void trace_medium_write(const uint8_t *data, uint32_t len)
+   {
+           /* forward data over custom transport here */
+   }
+
+#. Add or modify a :file:`Kconfig` file, extending the choice :kconfig:option:`NRF_MODEM_LIB_TRACE_MEDIUM` with another option.
+   .. code-block:: Kconfig
+      if NRF_MODEM_LIB_TRACE_ENABLED
+
+      # Extends the choice with another medium
+      choice NRF_MODEM_LIB_TRACE_MEDIUM
+
+      config NRF_MODEM_LIB_TRACE_MEDIUM_MY_TRACE_MEDIUM
+              bool "My awesome trace transport medium name"
+              help
+                Optional description of my awesome
+                trace transport medium.
+
+      endchoice
+
+      endif
+
+#. Add or modify a :file:`CMakeLists.txt` file, adding the custom trace medium source(s) only if the custom trace medium option have been chosen.
+   .. code-block:: cmake
+      if(CONFIG_NRF_MODEM_LIB_TRACE_ENABLED)
+
+      zephyr_library()
+
+      # Only add 'custom' medium to compilation when selected.
+      zephyr_library_sources_ifdef(
+        CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_MY_TRACE_MEDIUM
+        path/to/my_trace_medium.c
+      )
+
+      endif()
+
+#. Make sure the :file:`Kconfig` and :file:`CMakeLists.txt` files are included in the build.
+#. To use the custom modem trace transport medium, add
+   .. code-block:: none
+      CONFIG_NRF_MODEM_LIB_TRACE_ENABLED=y
+      CONFIG_NRF_MODEM_LIB_TRACE_MEDIUM_MY_TRACE_MEDIUM=y
+
+   to your application's :file:`prj.conf`.
+
 Modem fault handling
 ********************
 If a fault occurs in the modem, the application is notified through the fault handler function that is registered with the Modem library during initialization.
