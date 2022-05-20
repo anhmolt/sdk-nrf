@@ -51,15 +51,20 @@ int nrf_modem_lib_trace_start(enum nrf_modem_lib_trace_mode trace_mode)
 
 int nrf_modem_lib_trace_process(const uint8_t *data, uint32_t len)
 {
+	int err;
+
+	if (!is_stopped && is_transport_initialized) {
+		trace_medium_write(data, len);
+	}
+
+	err = nrf_modem_trace_processed_callback(data, len);
+	if (err) {
+		LOG_ERR("nrf_modem_trace_processed_callback failed, err %d", err);
+	}
+
 	if (!is_transport_initialized) {
 		return -ENXIO;
 	}
-
-	if (is_stopped) {
-		return 0;
-	}
-
-	trace_medium_write(data, len);
 
 	return 0;
 }
