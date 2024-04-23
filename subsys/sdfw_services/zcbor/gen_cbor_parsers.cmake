@@ -30,7 +30,7 @@ find_program(
 # Empty target that will depend on other install targets.
 add_custom_target(ssf_parser_files_install)
 
-function(generate_cbor_files cddl_file install_dir)
+function(generate_cbor_files cddl_file install_dir entry_types)
   set(license ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/license.cmake)
   set(gen_cmake_list ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/gen_cmake_list.cmake)
 
@@ -58,8 +58,6 @@ function(generate_cbor_files cddl_file install_dir)
 
   set(out_files "")
   list(APPEND out_files ${encode_c} ${decode_c} ${encode_h} ${decode_h} ${types_h})
-
-  set(entry_types ${ARGN})
 
   # Ensures correct passing of list argument to ${license} file.
   string(REPLACE ";" "\;" out_files_cmd_arg "${out_files}")
@@ -109,18 +107,28 @@ endfunction()
 # Function for generating CBOR parsers from CDDL files with zcbor, or
 # adding already generated and installed CBOR parsers to the build.
 #
-# `cddl_file`     Path to a .cddl file.
-# `install_dir `  Path of the directory where installed CBOR parser
-#                 files can be found. Or, in case target `ssf_parser_files_install`
-#                 is run, the directory to install the CBOR parsers.
-# OPTIONAL        List of entry types to create parsers for.
+# Arguments:
+# cddl_file       Path to cddl file.
 #
-function(generate_and_add_cbor_files cddl_file install_dir)
+# INSTALL_DIR     Directory path where installed CBOR parser files can be found.
+#                 Or, if target `ssf_parser_files_install` is run,
+#                 the directory to install the CBOR parsers.
+# ENTRY_TYPES     List of entry types to create parsers for.
+#
+function(generate_and_add_cbor_files cddl_file)
+  set(one_value_args INSTALL_DIR)
+  set(multi_value_args ENTRY_TYPES)
+  cmake_parse_arguments(ARG "" "${one_value_args}" "${multi_value_args}" ${ARGN})
+
   cmake_path(ABSOLUTE_PATH cddl_file
     BASE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} NORMALIZE
     OUTPUT_VARIABLE cddl_file
   )
-  cmake_path(ABSOLUTE_PATH install_dir
+
+  if (NOT DEFINED ARG_INSTALL_DIR)
+    set(ARG_INSTALL_DIR "zcbor_generated")
+  endif()
+  cmake_path(ABSOLUTE_PATH ARG_INSTALL_DIR
     BASE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} NORMALIZE
     OUTPUT_VARIABLE install_dir
   )
@@ -133,7 +141,7 @@ function(generate_and_add_cbor_files cddl_file install_dir)
     if (NOT TARGET ${lib_name})
       zephyr_library()
     endif()
-    generate_cbor_files(${cddl_file} ${install_dir} ${ARGN})
+    generate_cbor_files(${cddl_file} ${install_dir} "${ARG_ENTRY_TYPES}")
   else()
     add_subdirectory(${install_dir} ${bin_dir})
   endif()

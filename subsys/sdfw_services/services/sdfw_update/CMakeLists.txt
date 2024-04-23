@@ -6,7 +6,9 @@
 
 zephyr_sources(sdfw_update_service.c)
 
-generate_and_add_cbor_files(sdfw_update_service.cddl zcbor_generated
-  sdfw_update_req
-  sdfw_update_rsp
+generate_and_add_cbor_files(sdfw_update_service.cddl
+  INSTALL_DIR zcbor_generated
+  ENTRY_TYPES
+    sdfw_update_req
+    sdfw_update_rsp
 )

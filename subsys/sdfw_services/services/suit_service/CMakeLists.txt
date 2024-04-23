@@ -18,8 +18,10 @@ if(CONFIG_SUIT_STREAM_SOURCE_IPC)
   zephyr_library_link_libraries(suit_stream_sinks_interface)
 endif()
 
-generate_and_add_cbor_files(suit_service.cddl zcbor_generated
-  suit_req
-  suit_rsp
-  suit_nfy
+generate_and_add_cbor_files(suit_service.cddl
+  INSTALL_DIR zcbor_generated
+  ENTRY_TYPES
+    suit_req
+    suit_rsp
+    suit_nfy
 )

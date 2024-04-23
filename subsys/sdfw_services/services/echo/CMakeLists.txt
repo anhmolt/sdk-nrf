@@ -6,7 +6,9 @@
 
 zephyr_sources(echo_service.c)
 
-generate_and_add_cbor_files(echo_service.cddl zcbor_generated
-  echo_service_req
-  echo_service_rsp
+generate_and_add_cbor_files(echo_service.cddl
+  INSTALL_DIR zcbor_generated
+  ENTRY_TYPES
+    echo_service_req
+    echo_service_rsp
 )
