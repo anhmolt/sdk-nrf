@@ -30,7 +30,7 @@ find_program(
 # Empty target that will depend on other install targets.
 add_custom_target(ssf_parser_files_install)
 
-function(generate_cbor_files cddl_file install_dir entry_types)
+function(generate_cbor_files cddl_file install_dir entry_types short_names)
   set(license ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/license.cmake)
   set(gen_cmake_list ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/gen_cmake_list.cmake)
 
@@ -62,6 +62,11 @@ function(generate_cbor_files cddl_file install_dir entry_types)
   # Ensures correct passing of list argument to ${license} file.
   string(REPLACE ";" "\;" out_files_cmd_arg "${out_files}")
 
+  set(SHORT_NAMES_FLAG "")
+  if (short_names)
+    set(SHORT_NAMES_FLAG "--short-names")
+  endif()
+
   if (CLANG_FORMAT_EXECUTABLE)
     set(CLANG_FORMAT_COMMAND COMMAND ${CLANG_FORMAT_EXECUTABLE} -i "${out_files}")
   endif()
@@ -76,6 +81,7 @@ function(generate_cbor_files cddl_file install_dir entry_types)
       --output-c ${src_out}/${cddl_name}.c # When both '-d' and '-e' are specified, zcbor automatically
       --output-h ${include_out}/${cddl_name}.h # adds '_encode' and '_decode' to filenames.
       --output-h-types ${include_out}/${types_h_name}
+      ${SHORT_NAMES_FLAG}
     COMMAND ${CMAKE_COMMAND} -DFILES=${out_files_cmd_arg} -P ${license}
     ${CLANG_FORMAT_COMMAND}
     DEPENDS ${license} ${cddl_file}
@@ -114,11 +120,16 @@ endfunction()
 #                 Or, if target `ssf_parser_files_install` is run,
 #                 the directory to install the CBOR parsers.
 # ENTRY_TYPES     List of entry types to create parsers for.
+# SHORT_NAMES     (Optional) Attempt to make most generated struct member names shorter.
+#                 This might make some names identical which will cause a compile error.
+#                 If so, tweak the CDDL labels or layout, or disable this option.
+#                 This might also make enum names different from the corresponding union members.
 #
 function(generate_and_add_cbor_files cddl_file)
+  set(options SHORT_NAMES)
   set(one_value_args INSTALL_DIR)
   set(multi_value_args ENTRY_TYPES)
-  cmake_parse_arguments(ARG "" "${one_value_args}" "${multi_value_args}" ${ARGN})
+  cmake_parse_arguments(ARG "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
   cmake_path(ABSOLUTE_PATH cddl_file
     BASE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} NORMALIZE
@@ -141,7 +152,7 @@ function(generate_and_add_cbor_files cddl_file)
     if (NOT TARGET ${lib_name})
       zephyr_library()
     endif()
-    generate_cbor_files(${cddl_file} ${install_dir} "${ARG_ENTRY_TYPES}")
+    generate_cbor_files(${cddl_file} ${install_dir} "${ARG_ENTRY_TYPES}" ${ARG_SHORT_NAMES})
   else()
     add_subdirectory(${install_dir} ${bin_dir})
   endif()
