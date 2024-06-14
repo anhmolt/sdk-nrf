@@ -41,6 +41,8 @@ manifest:
       url-base: https://github.com/boschsensortec
     - name: eembc
       url-base: https://github.com/eembc
+    - name: anhmolt
+      url-base: https://github.com/anhmolt
 
   # If not otherwise specified, the projects below should be obtained
   # from the ncs remote.
@@ -72,7 +74,8 @@ manifest:
     # https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/guides/modules.html
     - name: zephyr
       repo-path: sdk-zephyr
-      revision: 8bd088c7c2936dbc94eddd5ede980d45a341e73d
+      remote: anhmolt
+      revision: new-sockopt-delay-ipv6-addr-refresh
       import:
         # In addition to the zephyr repository itself, NCS also
         # imports the contents of zephyr/west.yml at the above
@@ -120,6 +123,9 @@ manifest:
     #
     # Some of these are also Zephyr modules which have NCS-specific
     # changes.
+    - name: libmodem
+      repo-path: libmodem
+      revision: pull/823/head
     - name: hostap
       repo-path: sdk-hostap
       path: modules/lib/hostap
@@ -157,7 +163,8 @@ manifest:
     - name: nrfxlib
       repo-path: sdk-nrfxlib
       path: nrfxlib
-      revision: 56e62181e1d65bf7c21acf128aa15c290bfcc380
+      remote: anhmolt
+      revision: new-sockopt-delay-ipv6-addr-refresh
     - name: trusted-firmware-m
       repo-path: sdk-trusted-firmware-m
       path: modules/tee/tf-m/trusted-firmware-m
