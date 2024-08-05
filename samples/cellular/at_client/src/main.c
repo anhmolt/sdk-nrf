@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <modem/nrf_modem_lib.h>
+
+#ifndef CONFIG_SOC_SERIES_NRF92X
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
@@ -22,6 +24,7 @@ void enable_xtal(void)
 	sys_notify_init_spinwait(&cli.notify);
 	(void)onoff_request(clk_mgr, &cli);
 }
+#endif /* CONFIG_SOC_SERIES_NRF92X */
 
 int main(void)
 {
@@ -34,7 +37,9 @@ int main(void)
 		printk("Modem library initialization failed, error: %d\n", err);
 		return 0;
 	}
+#ifndef CONFIG_SOC_SERIES_NRF92X
 	enable_xtal();
+#endif /* CONFIG_SOC_SERIES_NRF92X */
 	printk("Ready\n");
 
 	return 0;
