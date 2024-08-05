@@ -1,0 +1,33 @@
+
+/ {
+	/* Chose UART to use for at_host. */
+	chosen {
+		ncs,at-host-uart = &uart136;
+	};
+
+	aliases {
+		/* Delete alias. Node is deleted below. */
+		/delete-property/ sw3;
+	};
+};
+
+/* Pin P0.11 allocated by modem. */
+/delete-node/ &button3;
+
+/* Disable CTS and RTS pins. (Redefine pinctrl nodes to remove CTS and RTS.) */
+&uart136_default {
+	group1 {
+		psels = <NRF_PSEL(UART_TX, 2, 4)>;
+	};
+	group3 {
+		bias-pull-up;
+		psels = <NRF_PSEL(UART_RX, 2, 5)>;
+	};
+};
+&uart136_sleep {
+	group1 {
+		low-power-enable;
+		psels = <NRF_PSEL(UART_TX, 2, 4)>,
+			<NRF_PSEL(UART_RX, 2, 5)>;
+	};
+};
