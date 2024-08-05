@@ -1,0 +1,56 @@
+
+/ {
+	/* Specify uart to use for at_host */
+	chosen {
+		ncs,at-host-uart = &uart136;
+	};
+
+	/* Delete these aliases because the button nodes are deleted. */
+	aliases {
+		// /delete-property/ sw0;
+		// /delete-property/ sw1;
+		// /delete-property/ sw3;
+	};
+};
+
+/* Remove buttons because they conflict with modem pin allocations. */
+// /delete-node/ &button0;
+// /delete-node/ &button1;
+// /delete-node/ &button3;
+
+/* Reduce application ram0x size from 512kB to 256kB because last part of that
+ * memory conflicted with modem allocation.
+ */
+&cpuapp_ram0x_region {
+	reg = <0x2f012000 DT_SIZE_K(388)>;
+	ranges = <0x0 0x2f012000 0x61000>;
+};
+&cpuapp_data {
+	reg = <0x1000 DT_SIZE_K(384)>;
+};
+
+/* Move application uart to port 2 because the used pins on port 0 conflict
+ * with modem pin allocations.
+ */
+&uart136_default {
+	group1 {
+		/* UARTE does not support pins 0..3. Change RTS to use P0.7.
+		 * A jumper is then required between P0.0 and P0.7 for HWFC on SW DevBrd.
+		 */
+		psels = <NRF_PSEL(UART_TX, 2, 4)>,
+			<NRF_PSEL(UART_RTS, 2, 7)>;
+	};
+	group3 {
+		bias-pull-up;
+		psels = <NRF_PSEL(UART_RX, 2, 5)>,
+			<NRF_PSEL(UART_CTS, 2, 6)>;
+	};
+};
+&uart136_sleep {
+	group1 {
+		psels = <NRF_PSEL(UART_TX, 2, 4)>,
+			<NRF_PSEL(UART_RX, 2, 5)>,
+			<NRF_PSEL(UART_RTS, 2, 7)>,
+			<NRF_PSEL(UART_CTS, 2, 6)>;
+	};
+};
