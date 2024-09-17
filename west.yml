@@ -41,6 +41,8 @@ manifest:
       url-base: https://github.com/boschsensortec
     - name: eembc
       url-base: https://github.com/eembc
+    - name: anhmolt
+      url-base: https://github.com/anhmolt
 
   # If not otherwise specified, the projects below should be obtained
   # from the ncs remote.
@@ -157,7 +159,8 @@ manifest:
     - name: nrfxlib
       repo-path: sdk-nrfxlib
       path: nrfxlib
-      revision: 56a4bd3100123a8dd2049968d54cfc4014ca8eb8
+      remote: anhmolt
+      revision: nrf_modem-v2.8.0
     - name: trusted-firmware-m
       repo-path: sdk-trusted-firmware-m
       path: modules/tee/tf-m/trusted-firmware-m
