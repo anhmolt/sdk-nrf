@@ -3643,6 +3643,16 @@ NRF91-1702: The modem may fail to attach to the network after a modem firmware u
   **Workaround:** Reinitialize the :ref:`nrfxlib:nrf_modem` by calling :c:func:`nrf_modem_lib_shutdown` followed by :c:func:`nrf_modem_lib_init`,
   or reboot the application core as done in the existing |NCS| samples and applications.
 
+.. rst-class:: v2-8-0
+
+NCSDK-29993: The :c:func:`nrf_send` function with ``NRF_MSG_WAITACK`` flag will incorrectly set the ``errno`` to ``0xBAADBAAD`` if the socket is closed before the send operation finishes.
+  This will trigger an assert in :c:func:`nrf_modem_os_errno_set` if asserts are enabled.
+
+  **Affected platforms:** nRF9161, nRF9151
+  **Affected modem firmware versions:** v2.0.2
+
+  **Workaround:** Disable asserts or remove the assert in :c:func:`nrf_modem_os_errno_set`.
+
 Multiprotocol Service Layer (MPSL)
 ==================================
 
