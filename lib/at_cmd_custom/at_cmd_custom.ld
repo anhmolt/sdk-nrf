@@ -1,4 +1,3 @@
-. = ALIGN(4);
-_nrf_modem_at_cmd_custom_list_start = .;
-KEEP(*(SORT_BY_NAME("._nrf_modem_at_cmd_custom.*")));
-_nrf_modem_at_cmd_custom_list_end = .;
+#include <zephyr/linker/iterable_sections.h>
+
+Z_LINK_ITERABLE_ALIGNED(nrf_modem_at_cmd_custom, Z_LINK_ITERABLE_SUBALIGN)

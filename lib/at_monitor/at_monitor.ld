@@ -1,5 +1,3 @@
-/* AT monitors */
-. = ALIGN(4);
-_at_monitor_entry_list_start = .;
-KEEP(*(SORT_BY_NAME("._at_monitor_entry.*")));
-_at_monitor_entry_list_end = .;
+#include <zephyr/linker/iterable_sections.h>
+
+Z_LINK_ITERABLE_ALIGNED(at_monitor_entry, Z_LINK_ITERABLE_SUBALIGN)

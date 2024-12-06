@@ -1,10 +1,5 @@
-. = ALIGN(4);
-_nrf_modem_lib_dfu_cb_list_start = .;
-KEEP(*(SORT_BY_NAME("._nrf_modem_lib_dfu_cb.*")));
-_nrf_modem_lib_dfu_cb_list_end = .;
-_nrf_modem_lib_init_cb_list_start = .;
-KEEP(*(SORT_BY_NAME("._nrf_modem_lib_init_cb.*")));
-_nrf_modem_lib_init_cb_list_end = .;
-_nrf_modem_lib_shutdown_cb_list_start = .;
-KEEP(*(SORT_BY_NAME("._nrf_modem_lib_shutdown_cb.*")));
-_nrf_modem_lib_shutdown_cb_list_end = .;
+#include <zephyr/linker/iterable_sections.h>
+
+Z_LINK_ITERABLE_ALIGNED(nrf_modem_lib_dfu_cb, Z_LINK_ITERABLE_SUBALIGN)
+Z_LINK_ITERABLE_ALIGNED(nrf_modem_lib_init_cb, Z_LINK_ITERABLE_SUBALIGN)
+Z_LINK_ITERABLE_ALIGNED(nrf_modem_lib_shutdown_cb, Z_LINK_ITERABLE_SUBALIGN)
