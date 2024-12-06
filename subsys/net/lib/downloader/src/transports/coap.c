@@ -542,7 +542,7 @@ static int dl_coap_download(struct downloader *dl)
 	return 0;
 }
 
-static struct dl_transport dl_transport_coap = {
+static DL_TRANSPORT(coap) = {
 	.proto_supported = dl_coap_proto_supported,
 	.init = dl_coap_init,
 	.deinit = dl_coap_deinit,
@@ -550,8 +550,6 @@ static struct dl_transport dl_transport_coap = {
 	.close = dl_coap_close,
 	.download = dl_coap_download,
 };
-
-DL_TRANSPORT(coap, &dl_transport_coap);
 
 int downloader_transport_coap_set_config(struct downloader *dl,
 					 struct downloader_transport_coap_cfg *cfg)

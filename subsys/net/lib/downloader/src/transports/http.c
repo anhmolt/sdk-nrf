@@ -569,7 +569,7 @@ static int dl_http_download(struct downloader *dl)
 	return 0;
 }
 
-static struct dl_transport dl_transport_http = {
+static DL_TRANSPORT(http) = {
 	.proto_supported = dl_http_proto_supported,
 	.init = dl_http_init,
 	.deinit = dl_http_deinit,
@@ -577,8 +577,6 @@ static struct dl_transport dl_transport_http = {
 	.close = dl_http_close,
 	.download = dl_http_download,
 };
-
-DL_TRANSPORT(http, &dl_transport_http);
 
 int downloader_transport_http_set_config(struct downloader *dl,
 					 struct downloader_transport_http_cfg *cfg)

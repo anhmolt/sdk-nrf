@@ -406,7 +406,7 @@ static int downloader_start(struct downloader *dl, const struct downloader_host_
 	__ASSERT_NO_MSG(url != NULL);
 
 	int err;
-	struct dl_transport *transport_connected = dl->transport;
+	const struct dl_transport *transport_connected = dl->transport;
 	bool host_connected = false;
 
 	LOG_DBG("URL: %s", url);
@@ -457,10 +457,10 @@ static int downloader_start(struct downloader *dl, const struct downloader_host_
 	dl->complete = false;
 
 	dl->transport = NULL;
-	STRUCT_SECTION_FOREACH(dl_transport_entry, entry)
+	STRUCT_SECTION_FOREACH(dl_transport, entry)
 	{
-		if (entry->transport->proto_supported(dl, url)) {
-			dl->transport = entry->transport;
+		if (entry->proto_supported(dl, url)) {
+			dl->transport = entry;
 			break;
 		}
 	}
@@ -474,10 +474,10 @@ static int downloader_start(struct downloader *dl, const struct downloader_host_
 			}
 
 			LOG_WRN("Protocol not specified for %s, attempting %s", url, fallback);
-			STRUCT_SECTION_FOREACH(dl_transport_entry, entry)
+			STRUCT_SECTION_FOREACH(dl_transport, entry)
 			{
-				if (entry->transport->proto_supported(dl, fallback)) {
-					dl->transport = entry->transport;
+				if (entry->proto_supported(dl, fallback)) {
+					dl->transport = entry;
 					break;
 				}
 			}

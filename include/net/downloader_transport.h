@@ -93,22 +93,13 @@ struct dl_transport {
 	int (*download)(struct downloader *dl);
 };
 
-/** Downloader transport entry */
-struct dl_transport_entry {
-	/** Transport */
-	struct dl_transport *transport;
-};
-
 /**
- * @brief Define a DL transport.
+ * @brief Define a DL transport and place it in a dedicated DL transport iterable section in ROM.
  *
- * @param entry The entry name.
- * @param _transport The transport.
+ * @param _name transport name.
  */
-#define DL_TRANSPORT(entry, _transport)                                                            \
-	static STRUCT_SECTION_ITERABLE(dl_transport_entry, entry) = {                              \
-		.transport = _transport,                                                           \
-	}
+#define DL_TRANSPORT(_name)                                                                        \
+	const STRUCT_SECTION_ITERABLE(dl_transport, CONCAT(dl_transport_, _name))
 
 #endif /* DOWNLOADER_TRANSPORT_H */
 

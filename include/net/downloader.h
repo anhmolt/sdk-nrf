@@ -226,7 +226,7 @@ struct downloader {
 	 * Store a pointer to the selected transport per downloader instance to avoid looking it up
 	 * each call.
 	 */
-	struct dl_transport *transport;
+	const struct dl_transport *transport;
 	/** Transport parameters. */
 	uint8_t transport_internal[CONFIG_DOWNLOADER_TRANSPORT_PARAMS_SIZE];
 
