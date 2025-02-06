@@ -11,6 +11,7 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 #include <net/downloader.h>
 #include <net/downloader_transport.h>
 #include <net/downloader_transport_http.h>
@@ -138,7 +139,7 @@ static int http_get_request_send(struct downloader *dl)
 {
 	int err;
 	int len;
-	size_t off = 0;
+	size_t off;
 	bool tls_force_range;
 	struct transport_params_http *http;
 
@@ -150,21 +151,21 @@ static int http_get_request_send(struct downloader *dl)
 	tls_force_range = (http->sock.proto == IPPROTO_TLS_1_2 && !dl->host_cfg.set_native_tls &&
 			   IS_ENABLED(CONFIG_SOC_SERIES_NRF91X));
 
-	if (dl->host_cfg.range_override) {
-		if (tls_force_range && dl->host_cfg.range_override > (TLS_RANGE_MAX)) {
+	if (tls_force_range) {
+		if (dl->host_cfg.range_override) {
+			dl->host_cfg.range_override = TLS_RANGE_MAX;
+		} else if (dl->host_cfg.range_override > TLS_RANGE_MAX) {
 			LOG_WRN("Range override > TLS max range, setting to TLS max range");
-			dl->host_cfg.range_override = (TLS_RANGE_MAX);
+			dl->host_cfg.range_override = TLS_RANGE_MAX;
 		}
-	} else if (tls_force_range) {
-		dl->host_cfg.range_override = TLS_RANGE_MAX;
 	}
 
 	if (dl->host_cfg.range_override) {
 		off = dl->progress + dl->host_cfg.range_override - 1;
 
-		if (dl->file_size && (off > dl->file_size - 1)) {
+		if (dl->file_size) {
 			/* Don't request bytes past the end of file */
-			off = dl->file_size - 1;
+			off = MIN(off, dl->file_size - 1);
 		}
 
 		len = snprintf(dl->cfg.buf, dl->cfg.buf_size, HTTP_GET_RANGE, dl->file,
@@ -184,7 +185,7 @@ static int http_get_request_send(struct downloader *dl)
 	}
 
 send:
-	if (len < 0 || len > dl->cfg.buf_size) {
+	if (!IN_RANGE(len, 0, dl->cfg.buf_size)) {
 		LOG_ERR("Cannot create GET request, buffer too small");
 		return -ENOMEM;
 	}
@@ -431,22 +432,21 @@ static int http_parse(struct downloader *dl, size_t len)
 		}
 	}
 
-	/* Have we received a whole fragment or the whole file? */
-	if (dl->progress + len != dl->file_size) {
-		if (http->ranged) {
-			http->ranged_progress += len;
-			if (http->ranged_progress < dl->host_cfg.range_override) {
-				/* Ranged query: read until a full fragment */
-				return len;
-			}
+	if (dl->progress + len == dl->file_size) {
+		/* A full file have been received */
+		http->new_data_req = true;
+	} else if (http->ranged) {
+		http->ranged_progress += len;
+		if (http->ranged_progress < dl->host_cfg.range_override) {
+			/* Ranged query: read until a full fragment is received */
 		} else {
-			/* Non-ranged query: just keep on reading, ignore fragment size */
-			return len;
+			/* Ranged query: request next fragment */
+			http->new_data_req = true;
 		}
+	} else {
+		/* Non-ranged query: just keep on reading, ignore fragment size */
 	}
 
-	/* Either we have a full file, or we need to request a next fragment */
-	http->new_data_req = true;
 	return len;
 }
 
@@ -613,10 +613,11 @@ static int dl_http_download(struct downloader *dl)
 
 	if (len < 0) {
 		if (len == -EMSGSIZE && dl->host_cfg.range_override) {
-			/* We do not have enough space for the http header and requested data,
+			/* Not enough space for the http header and requested data,
 			 * reattempt with shorter range request.
 			 */
-			dl->host_cfg.range_override -= dl->host_cfg.range_override > 256 ? 128 : 8;
+			dl->host_cfg.range_override -=
+				((dl->host_cfg.range_override > 256) ? 128 : 8);
 			if (dl->host_cfg.range_override <= 8) {
 				return -EMSGSIZE;
 			}
