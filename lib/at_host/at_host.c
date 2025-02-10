@@ -40,15 +40,12 @@ static const struct device *const uart_dev = DEVICE_DT_GET(DT_CHOSEN(ncs_at_host
 static const struct device *const uart_dev = DEVICE_DT_GET(DT_NODELABEL(uart0));
 #endif
 
-#if DT_HAS_CHOSEN(zephyr_log_uart)
-static const bool host_uart_is_log_uart = \
-	(uart_dev == DEVICE_DT_GET(DT_CHOSEN(zephyr_log_uart)));
-#elif DT_HAS_CHOSEN(zephyr_console)
-static const bool host_uart_is_log_uart = \
-	(uart_dev == DEVICE_DT_GET(DT_CHOSEN(zephyr_console)));
-#else
-static const bool host_uart_is_log_uart = false;
-#endif
+#define IS_LOG_BACKEND_UART(_uart_dev)                                                             \
+	(IS_ENABLED(CONFIG_LOG_BACKEND_UART) && COND_CODE_1(DT_HAS_CHOSEN(zephyr_log_uart),        \
+		(_uart_dev == DEVICE_DT_GET(DT_CHOSEN(zephyr_log_uart))),                          \
+		(COND_CODE_1(DT_HAS_CHOSEN(zephyr_console),                                        \
+			(_uart_dev == DEVICE_DT_GET(DT_CHOSEN(zephyr_console))), (false)))))
+
 
 static bool at_buf_busy; /* Guards at_buf while processing a command */
 static char at_buf[AT_BUF_SIZE]; /* AT command and modem response buffer */
@@ -57,9 +54,9 @@ static struct k_work cmd_send_work;
 
 static inline void write_uart_string(const char *str)
 {
-	if (host_uart_is_log_uart && IS_ENABLED(CONFIG_LOG_BACKEND_UART)) {
-		/* The chosen UART device is also the UART log backend device, so that's
-		* where the AT response must go.
+	if (IS_LOG_BACKEND_UART(uart_dev)) {
+		/* The chosen AT host UART device is also the UART log backend device.
+		 * Therefore, log the AT response instead of writing directly to the UART device.
 		*/
 		LOG_RAW("%s", str);
 		return;
