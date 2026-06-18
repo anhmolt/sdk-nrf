@@ -27,3 +27,13 @@ if(CONFIG_MPSL_USE_EXTERNAL_CLOCK_CONTROL)
 endif()
 
 add_subdirectory_ifdef(CONFIG_MPSL_PIN_DEBUG pin_debug)
+
+set(MPSL_SOC "${CONFIG_MPSL_SOC_VARIANT}")
+set(MPSL_FLOAT_TYPE "${CONFIG_MPSL_FLOAT_ABI_VARIANT}")
+add_subdirectory(${ZEPHYR_NRFXLIB_MODULE_DIR}/mpsl ${CMAKE_BINARY_DIR}/mpsl)
+
+if(NOT TARGET mpsl)
+  message(FATAL_ERROR "MPSL target was not created.")
+endif()
+
+zephyr_link_libraries(mpsl)
